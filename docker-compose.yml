@@ -135,3 +135,38 @@ services:
       KAFKA_MUSIC_APP_REST_PORT: 7070
     extra_hosts:
       - "moby:127.0.0.1"
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:4.0.0
+    restart: always
+    hostname: control-center
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: zookeeper:32181
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_REPLICATION: 1
+      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 2
+
+  ksql-cli:
+    image: "confluentinc/ksql-cli:0.3"
+    hostname: ksql-cli
+    depends_on:
+      - kafka
+    volumes:
+      - $PWD/scripts/ksql.properties:/tmp/ksql.properties
+      - $PWD/scripts/ksql.commands:/tmp/ksql.commands
+    command: "perl -e 'while(1){ sleep 99999 }'"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
+    extra_hosts:
+      - "moby:127.0.0.1"
+
