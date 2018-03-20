@@ -156,7 +156,7 @@ services:
       CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 2
 
   ksql-cli:
-    image: "confluentinc/ksql-cli:0.3"
+    image: "confluentinc/ksql-cli:0.5"
     hostname: ksql-cli
     depends_on:
       - kafka
