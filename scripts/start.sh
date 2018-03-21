@@ -32,7 +32,8 @@ done
 echo -e "\n\nStart KSQL engine:"
 docker exec kafkastreamsexamples_ksql-cli_1 ksql-server-start /tmp/ksql.properties >/tmp/ksql.log 2>&1 &
 sleep 10
-#docker-compose exec ksql-cli ksql-cli remote http://localhost:8080 --exec "run script '/tmp/ksql.commands';"
 
+# This still doesn't work
+#docker-compose exec ksql-cli ksql-cli remote http://localhost:8080 --exec "run script '/tmp/ksql.commands';"
 
 echo -e "\n\ndocker-compose exec ksql-cli ksql-cli remote http://localhost:8080"
