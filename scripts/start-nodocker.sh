@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [[ -z "$CONFLUENT_HOME" ]]; then
+  echo "\$CONFLUENT_HOME is not defined. Run 'export CONFLUENT_HOME=/path/to/download' and try again"
+  exit 1
+fi
+
+if [[ $(type confluent 2>&1) =~ "not found" ]]; then
+  echo "'confluent' is not found. Run 'export PATH=\${CONFLUENT_HOME}/bin:\${PATH}' and try again"
+  exit 1
+fi
+
 jps | grep KafkaMusicExampleDriver | awk '{print $1;}' | xargs kill -9
 confluent destroy
 
