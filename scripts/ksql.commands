@@ -17,7 +17,11 @@ CREATE STREAM ksqlsongplays AS SELECT plays.SONG_ID AS ID, ALBUM, ARTIST, NAME, 
 --Track song play counts
 CREATE TABLE ksqlsongplaycounts AS SELECT ID, NAME, GENRE, KEYCOL, COUNT(*) AS COUNT FROM ksqlsongplays WINDOW TUMBLING (size 300 second) GROUP BY ID, NAME, GENRE, KEYCOL;
 
---Top Five songs based on each WINDOW of ksqlsongplaycounts
-CREATE TABLE ksqltop5 AS SELECT KEYCOL, TOPKDISTINCT(NAME,5) FROM ksqlsongplaycounts GROUP BY KEYCOL;
+CREATE STREAM ksqlsongplaycountsstream (ID BIGINT, NAME VARCHAR, GENRE VARCHAR, KEYCOL BIGINT, COUNT BIGINT) WITH (kafka_topic='KSQLSONGPLAYCOUNTS', value_format='AVRO');
+CREATE STREAM ksqlsongplaycountsstreamvalid AS SELECT * FROM ksqlsongplaycountsstream where ROWTIME is not null;
+
+--Top Five song counts (without song names!) based on each WINDOW of ksqlsongplaycountsstreamvalid
+CREATE TABLE ksqltop5 AS SELECT KEYCOL, TOPKDISTINCT(COUNT,5) FROM ksqlsongplaycountsstreamvalid GROUP BY KEYCOL;
 --Top Five songs for each genre based on each WINDOW of ksqlsongplaycounts
-CREATE TABLE ksqltop5bygenre AS SELECT GENRE, TOPKDISTINCT(NAME,5) FROM ksqlsongplaycounts GROUP BY GENRE;
+CREATE TABLE ksqltop5bygenre AS SELECT GENRE, TOPKDISTINCT(COUNT,5) FROM ksqlsongplaycountsstreamvalid GROUP BY GENRE;
+
