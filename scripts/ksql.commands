@@ -14,16 +14,28 @@ CREATE TABLE ksqlsongtable (ID VARCHAR, ALBUM VARCHAR, ARTIST VARCHAR, NAME VARC
 --Join the plays with song as we will use it later for charting
 CREATE STREAM ksqlsongplays AS SELECT plays.SONG_ID AS ID, ALBUM, ARTIST, NAME, GENRE, DURATION, 1 AS KEYCOL FROM ksqlplayevents_min_duration plays LEFT JOIN ksqlsongtable songtable ON plays.SONG_ID = songtable.ID;
 
---Track song play counts
-CREATE TABLE ksqlsongplaycounts AS SELECT ID, NAME, GENRE, KEYCOL, COUNT(*) AS COUNT FROM ksqlsongplays WINDOW TUMBLING (size 300 second) GROUP BY ID, NAME, GENRE, KEYCOL;
+--Track song play counts in 30 second intervals
+CREATE TABLE ksqlsongplaycounts30 AS SELECT ID, NAME, GENRE, KEYCOL, COUNT(*) AS COUNT FROM ksqlsongplays WINDOW TUMBLING (size 30 second) GROUP BY ID, NAME, GENRE, KEYCOL;
+--Convert TABLE to STREAM
+CREATE STREAM ksqlsongplaycounts30stream (ID BIGINT, NAME VARCHAR, GENRE VARCHAR, KEYCOL BIGINT, COUNT BIGINT) WITH (kafka_topic='KSQLSONGPLAYCOUNTS30', value_format='AVRO');
+--Get all data into a single partition
+CREATE STREAM ksqlsongplaycounts30streampart AS SELECT * FROM ksqlsongplaycounts30stream WHERE ROWTIME is not null PARTITION BY KEYCOL;
+
+--Track song play counts for all time
+CREATE TABLE ksqlsongplaycounts AS SELECT ID, NAME, GENRE, KEYCOL, COUNT(*) AS COUNT FROM ksqlsongplays GROUP BY ID, NAME, GENRE, KEYCOL;
 --Convert TABLE to STREAM
 CREATE STREAM ksqlsongplaycountsstream (ID BIGINT, NAME VARCHAR, GENRE VARCHAR, KEYCOL BIGINT, COUNT BIGINT) WITH (kafka_topic='KSQLSONGPLAYCOUNTS', value_format='AVRO');
 --Get all data into a single partition
-CREATE STREAM ksqlsongplaycountsstreamvalid AS SELECT * FROM ksqlsongplaycountsstream WHERE ROWTIME is not null PARTITION BY KEYCOL;
+CREATE STREAM ksqlsongplaycountsstreampart AS SELECT * FROM ksqlsongplaycountsstream WHERE ROWTIME is not null PARTITION BY KEYCOL;
 
---Top Five song counts based on each WINDOW of ksqlsongplaycountsstreamvalid
+--Top Five song counts for all time based on ksqlsongplaycountsstreampart
 --At this time, `TOPK` does not support sorting by one column and selecting the value of another column
 --So all we have are counts but not names
-CREATE TABLE ksqltop5 AS SELECT KEYCOL, TOPKDISTINCT(COUNT,5) FROM ksqlsongplaycountsstreamvalid GROUP BY KEYCOL;
+CREATE TABLE ksqltop5 AS SELECT KEYCOL, TOPK(COUNT,5) FROM ksqlsongplaycountsstreampart GROUP BY KEYCOL;
 --Top Five songs for each genre based on each WINDOW of ksqlsongplaycounts
-CREATE TABLE ksqltop5bygenre AS SELECT GENRE, TOPKDISTINCT(COUNT,5) FROM ksqlsongplaycountsstreamvalid GROUP BY GENRE;
+CREATE TABLE ksqltop5bygenre AS SELECT GENRE, TOPK(COUNT,5) FROM ksqlsongplaycountsstreampart GROUP BY GENRE;
+
+--There is no automatic way to get a "final" count per window
+--But if you know a window time (e.g. 1521807660000), you can get the final counts
+--SELECT * FROM KSQLSONGPLAYCOUNTS30 WHERE ROWTIME = 1521807660000;
+

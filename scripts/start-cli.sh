@@ -15,7 +15,7 @@ fi
 [[ -d $CONFLUENT_HOME/ui ]] || mkdir -p "$CONFLUENT_HOME/ui"
 [[ -f "$CONFLUENT_HOME/ui/ksql-experimental-ui-0.1.war" ]] || wget --directory-prefix="$CONFLUENT_HOME/ui" https://s3.amazonaws.com/ksql-experimental-ui/ksql-experimental-ui-0.1.war
 
-#echo "auto.offset.reset=earliest" >> $CONFLUENT_HOME/etc/ksql/ksql-server.properties
+echo "auto.offset.reset=earliest" >> $CONFLUENT_HOME/etc/ksql/ksql-server.properties
 confluent start ksql-server
 
 mvn clean package -DskipTests
@@ -29,4 +29,8 @@ exit ;
 EOF
 sleep 5
 
-#echo -e "\n\nksql http://localhost:8088"
+cat <<EOF
+
+=====================================================
+KSQL UI: http://localhost:8088/index.html
+EOF
