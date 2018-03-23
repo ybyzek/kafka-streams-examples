@@ -18,7 +18,7 @@ fi
 echo "auto.offset.reset=earliest" >> $CONFLUENT_HOME/etc/ksql/ksql-server.properties
 confluent start ksql-server
 
-mvn clean package -DskipTests
+[[ -f "target/kafka-streams-examples-4.0.0-standalone.jar" ]] || mvn clean package -DskipTests
 sleep 10
 
 java -cp target/kafka-streams-examples-4.0.0-standalone.jar io.confluent.examples.streams.interactivequeries.kafkamusic.KafkaMusicExampleDriver &>/dev/null &
